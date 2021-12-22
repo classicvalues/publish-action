@@ -3,9 +3,13 @@ description: 'Move the major version tag to point to a specified ref'
 inputs:
   source-tag:
     description: 'Tag name that the major tag will point to. Examples: v1.2.3, 1.2.3'
-    required: true
+    required: false
   rc:
     description: 'Update rc tag'
+    required: false
+    default: ''
+  rc-sha:
+    description: 'Update rc tag to point to a commit'
     required: false
     default: ''
   token:

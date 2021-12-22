@@ -26,7 +26,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.updateTag = exports.validateIfReleaseIsPublished = void 0;
+exports.updateRCTagBySHA = exports.updateTag = exports.validateIfReleaseIsPublished = void 0;
 const core = __importStar(__nccwpck_require__(2186));
 const github_1 = __nccwpck_require__(5438);
 async function findTag(tag, octokitClient) {
@@ -96,6 +96,20 @@ async function updateTag(sourceTag, targetTag, octokitClient) {
     }
 }
 exports.updateTag = updateTag;
+async function updateRCTagBySHA(sourceSHA, targetTag, octokitClient) {
+    const foundTargetTag = await findTag(targetTag, octokitClient);
+    const refName = `tags/${targetTag}`;
+    if (foundTargetTag) {
+        core.info(`Updating the '${targetTag}' tag to point to '${sourceSHA}' commit`);
+        await octokitClient.git.updateRef({
+            ...github_1.context.repo,
+            ref: refName,
+            sha: sourceSHA,
+            force: true,
+        });
+    }
+}
+exports.updateRCTagBySHA = updateRCTagBySHA;
 
 
 /***/ }),
@@ -135,10 +149,17 @@ async function run() {
         const octokitClient = github.getOctokit(token);
         const sourceTagName = core.getInput("source-tag");
         const rc = core.getInput("rc");
+        const rcSHA = core.getInput("rc-sha");
         if (rc !== "") {
-            await api_utils_1.updateTag(sourceTagName, "rc", octokitClient);
-            core.setOutput("major-tag", "rc");
-            core.info(`'rc' tag now points to the '${sourceTagName}' tag`);
+            if (rcSHA !== "") {
+                await api_utils_1.updateRCTagBySHA(rcSHA, "rc", octokitClient);
+                core.info(`'rc' tag now points to the '${rcSHA}' commit`);
+            }
+            else {
+                await api_utils_1.updateTag(sourceTagName, "rc", octokitClient);
+                core.setOutput("major-tag", "rc");
+                core.info(`'rc' tag now points to the '${sourceTagName}' tag`);
+            }
         }
         else {
             version_utils_1.validateSemverVersionFromTag(sourceTagName);

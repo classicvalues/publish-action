@@ -103,3 +103,25 @@ export async function updateTag(
     });
   }
 }
+
+export async function updateRCTagBySHA(
+  sourceSHA: string,
+  targetTag: string,
+  octokitClient: InstanceType<typeof GitHub>
+): Promise<void> {
+  const foundTargetTag = await findTag(targetTag, octokitClient);
+  const refName = `tags/${targetTag}`;
+
+  if (foundTargetTag) {
+    core.info(
+      `Updating the '${targetTag}' tag to point to '${sourceSHA}' commit`
+    );
+
+    await octokitClient.git.updateRef({
+      ...context.repo,
+      ref: refName,
+      sha: sourceSHA,
+      force: true,
+    });
+  }
+}
